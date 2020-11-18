@@ -1,0 +1,146 @@
+.background {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: -100;
+}
+.bg-layer-1 {
+    background-image: url(../../../../../assets/game-board.jpg);
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: -90;
+    background-position: center;
+    background-size: contain;
+}
+
+.board-image {
+    position: fixed;
+    top: 0px;
+}
+
+.gameplay {
+    border: solid red;
+    position: fixed;
+    top: 0px;
+}
+
+.board-row {
+    border: solid green;
+    width: 100%;
+    height: 13%;
+    position: absolute;
+    display: inline-flex;
+
+    .corner-block {
+        width: 13%;
+        height: 100%;
+        border: solid 2px red;
+        cursor: pointer;
+    }
+    
+    .block {
+        width: 9%;
+        height: 100%;
+        border: solid pink;
+        cursor: pointer;
+    }
+}
+
+.board-col {
+    border: solid purple;
+    width: 13%;
+    height: 74%;
+    position: absolute;
+    top: 13%;
+
+    
+    
+    .block {
+        width: 100%;
+        height: 11.2%;
+        border: solid pink;
+        cursor: pointer;
+    }
+}
+
+.board-top {
+    top: 0px;
+}
+
+.board-bottom {
+    bottom: 0px;
+}
+
+.board-left {
+    left: 0px
+}
+
+.board-right {
+    right:  0px;
+}
+
+.action-panel {
+    position: fixed;
+    right: 2%;
+    top: 20%;
+    width: 20%;
+
+    .dice-rolls {
+        display: inline-flex;
+        width: 100%;
+    }
+}
+
+
+
+.details-panel {
+    position: fixed;
+    left: 2%;
+    top: 20%;
+    width: 20%;
+
+    .block-view {
+        border: solid 1px red;
+        height: 350px;
+
+        .head-color {
+            width: 100%;
+            height: 60px;
+            background-color: red;
+            border-bottom: solid 1px red;
+
+            h4 {
+                text-align: center;
+                line-height: 60px;
+                // color: #fff;
+            }
+        }
+
+        .price-text {
+            padding-top: 100px;
+            width: 100%;
+            text-align: center;
+        }
+
+        
+    }
+}
+
+.players {
+    display: block;
+    width: 100%;
+    margin-bottom: 6px;
+
+    .player-box {
+        width: 25%;
+        display: inline;
+        float: left;
+        text-align: center;
+    }
+
+    .active-box {
+        background-color: green;
+        color: #fff;
+    }
+}
