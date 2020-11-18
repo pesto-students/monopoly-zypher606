@@ -14,6 +14,12 @@ class GameplayComponent extends React.Component {
     constructor(props) {
         super(props);
 
+        gameBlocks.map((g, index) => {
+            g.id = index;
+            g.owned_by = null;
+            return g;
+        });
+
         this.state = { 
             width: 0, 
             height: 0,
@@ -142,6 +148,41 @@ class GameplayComponent extends React.Component {
 
     buyProperty = () => {
         const { currentPlayer, displayBlock } = this.state;
+        
+        if (!displayBlock.price && typeof displayBlock.price != 'number') {
+            window.alert('Cannot buy this block');
+            return;
+        }
+
+        if (currentPlayer.balance >= displayBlock.price) {
+            currentPlayer.balance -= displayBlock.price;
+            currentPlayer.properties.push(displayBlock);
+            
+            displayBlock.owned_by = currentPlayer;
+
+            this.setState({ currentPlayer, displayBlock });
+            window.alert('Property bought successfully');
+        }
+    }
+
+    payRent = () => {
+        const { currentPlayer, displayBlock } = this.state;
+        
+        if (!displayBlock.rent1 && typeof displayBlock.rent1 != 'number') {
+            window.alert('Cannot pay rent for this block');
+            return;
+        }
+
+        if (currentPlayer.balance >= displayBlock.rent1) {
+            currentPlayer.balance -= displayBlock.rent1;
+
+            displayBlock.owned_by.balance += displayBlock.rent1;
+
+            this.setState({ currentPlayer, displayBlock });
+            window.alert('Rent paid successfully successfully');
+        }
+
+
     }
 
     
@@ -218,7 +259,7 @@ class GameplayComponent extends React.Component {
             <div className="details-panel">
                 <div className="block-view">
                     <div style={{backgroundColor: this.state.displayBlock?.color}} className="head-color">
-                        <h4>{this.state.displayBlock?.name}</h4>
+                        <h4>#{this.state.displayBlock?.id} {this.state.displayBlock?.name}</h4>
                     </div>
 
                     <div className="price-text">
@@ -229,7 +270,16 @@ class GameplayComponent extends React.Component {
                 </div>
 
                 <div className="actions">
-                    <button onClick={this.buyProperty} >BUY NOW</button>
+                    {
+                        this.state.displayBlock?.owned_by === null &&
+                        typeof this.state.displayBlock?.price === 'number' &&
+                        <button onClick={this.buyProperty} >BUY NOW</button>
+                    }
+                    {
+                        this.state.displayBlock?.owned_by !== null &&
+                        this.state.displayBlock?.owned_by.id !== this.state.currentPlayer?.id &&
+                        <button onClick={this.payRent} >PAY RENT</button>
+                    }
                     <button>PASS</button>
                 </div>
             </div>
@@ -259,12 +309,13 @@ class GameplayComponent extends React.Component {
                                     {player.balance} <br/>
                                     {player.position} <br/>
 
-                                    Prop:
+                                    <hr/>
+                                    Assets
                                     <ul>
                                         {
                                             player.properties.map(property => {
                                                 return (
-                                                    <li>{property.name, property.pricetext}</li>
+                                                    <li>#{property.id}</li>
                                                 )
                                             })
                                         }

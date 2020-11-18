@@ -137,6 +137,11 @@
         display: inline;
         float: left;
         text-align: center;
+
+        ul {
+            list-style: none;
+            padding: 0px;
+        }
     }
 
     .active-box {
