@@ -1,6 +1,8 @@
 import React from 'react';
 import "./gameplay.component.scss";
 import gameBlocks from '../../../../../data/gameBlocks.json';
+import communityCards from '../../../../../data/communityCards.json';
+import chanceCards from '../../../../../data/chanceCards.json';
 import boardBackground from '../../../../../assets/game-board.jpg'
 import dice1 from '../../../../../assets/Die_1.png'
 import dice2 from '../../../../../assets/Die_2.png'
@@ -25,10 +27,14 @@ class GameplayComponent extends React.Component {
             width: 0, 
             height: 0,
             players: [],
+            
             bank: {
                 balance: 2000
             },
             board: gameBlocks,
+            chanceCards: chanceCards,
+            communityCards: communityCards,
+
             currentPlayer: null,
             currentPlayerIndex: 0,
             dice1: 1,
@@ -42,6 +48,10 @@ class GameplayComponent extends React.Component {
             payPropertyRentButtonEnabled: false,
             payUtilityBillsButtonEnabled: false,
             payTaxButtonEnabled: false,
+            collectSalaryButtonEnabled: false,
+            pickCommunityCardButtonEnabled: false,
+            pickChanceCardButtonEnabled: false,
+            continueButtonEnabled: false,
             
             wildActionsButtonEnabled: false,
         };
@@ -77,6 +87,8 @@ class GameplayComponent extends React.Component {
                 balance: 1500,
                 position: 0,
                 properties: [],
+                communityCards: [],
+                chanceCards: [],
             },
             {
                 id: 2,
@@ -84,7 +96,9 @@ class GameplayComponent extends React.Component {
                 color: 'blue',
                 balance: 1500,
                 position: 0,
-                properties: []
+                properties: [],
+                communityCards: [],
+                chanceCards: [],
             },
 
             {
@@ -94,6 +108,8 @@ class GameplayComponent extends React.Component {
                 balance: 1500,
                 position: 0,
                 properties: [],
+                communityCards: [],
+                chanceCards: [],
             },
             {
                 id: 4,
@@ -102,6 +118,8 @@ class GameplayComponent extends React.Component {
                 balance: 1500,
                 position: 0,
                 properties: [],
+                communityCards: [],
+                chanceCards: [],
             },
         ];
 
@@ -266,7 +284,11 @@ class GameplayComponent extends React.Component {
             payPropertyRentButtonEnabled: false,
             payUtilityBillsButtonEnabled: false,
             payTaxButtonEnabled: false,
-
+            collectSalaryButtonEnabled: false,
+            pickCommunityCardButtonEnabled: false,
+            pickChanceCardButtonEnabled: false,
+            continueButtonEnabled: false,
+            
             wildActionsButtonEnabled: false,
         });
     }
@@ -276,10 +298,28 @@ class GameplayComponent extends React.Component {
         if (group === "") {
             // Wind actions
             if (position === 4 || position === 38) {
+                // Govt tax
                 this.setState({ payTaxButtonEnabled: true });
+            } else if (position === 0) {
+                this.setState({ collectSalaryButtonEnabled: true });
+            } else if (position === 10 || position === 20) {
+                this.setState({ continueButtonEnabled: true });
+            } else if (position === 2 || position === 17 || position === 33) {
+                // Community card
+                this.setState({ pickCommunityCardButtonEnabled: true });
+            } else if (position === 7 || position === 22 || position === 35) {
+                // Chance card pick
+                this.setState({ pickChanceCardButtonEnabled: true });
             }
         } else if (group === 1) {
-            // Govt Taxes
+            // Properties which doesn't take rent
+            if (selectedBlock.owned_by != null &&
+                selectedBlock.owned_by.id !== currentPlayer.id) {
+                    this.setState({ continueGameplay: true });
+            } else if (selectedBlock.owned_by == null &&
+                typeof selectedBlock.price === 'number') {
+                    this.setState({ buyPropertyButtonEnabled: true, continueGameplay: true });
+            }
         } else if (group === 2) {
             // Pay utilities bill
             this.setState({ payUtilityBillsButtonEnabled: true });
@@ -348,7 +388,58 @@ class GameplayComponent extends React.Component {
             this.nextPlayer();
         }
     }
+
+    collectSalary = () => {
+        const { currentPlayer, bank } = this.state;
+
+        currentPlayer.balance += 200; // Deduct from user
+        bank.balance -= 200; // Add money to bank
+
+        this.setState({ currentPlayer, bank });
+        
+        window.alert('Salary of $200 colected successfully!');
+        
+        this.nextPlayer();
+            
+    }
     
+    continueGameplay = () => {
+        this.nextPlayer();
+    }
+
+    pickCommunityCard = () => {
+        
+        const { communityCards, currentPlayer } = this.state;
+        const randomIndex = Math.floor(Math.random() * communityCards.length);
+        const randomCard = communityCards.splice(randomIndex, 1);
+
+        currentPlayer.communityCards.push(randomCard);
+        
+        window.alert(randomCard);
+
+        this.setState({ communityCards, currentPlayer })
+
+        this.nextPlayer();
+
+    }
+
+    pickChanceCard = () => {
+        const { chanceCards, currentPlayer } = this.state;
+        const randomIndex = Math.floor(Math.random() * chanceCards.length);
+        const randomCard = chanceCards.splice(randomIndex, 1);
+
+        currentPlayer.chanceCards.push(randomCard);
+        
+        window.alert(randomCard);
+
+        this.setState({ chanceCards, currentPlayer })
+
+        this.nextPlayer();
+    }
+
+    tryWildCard() {
+        // Execute the picked wild card
+    }
     
     
     render() {
@@ -437,7 +528,10 @@ class GameplayComponent extends React.Component {
                         <div className="price-text">
                             <h4>{this.state.selectedBlock.pricetext}</h4>
                             
-                            <h5>Rents: {this.state.selectedBlock.baserent}, {this.state.selectedBlock.rent1}, {this.state.selectedBlock.rent2}, {this.state.selectedBlock.rent3}, {this.state.selectedBlock.rent4}, {this.state.selectedBlock.rent5}</h5>
+                            {   
+                                typeof this.state.selectedBlock?.baserent === 'number' &&
+                                <h5>Rents: {this.state.selectedBlock.baserent}, {this.state.selectedBlock.rent1}, {this.state.selectedBlock.rent2}, {this.state.selectedBlock.rent3}, {this.state.selectedBlock.rent4}, {this.state.selectedBlock.rent5}</h5>
+                            }
                             {
                                 this.state.payPropertyRentButtonEnabled &&
                                 <p>Visit: {this.state.selectedBlock.visited_players_count[this.state.currentPlayer.id] ? this.state.selectedBlock.visited_players_count[this.state.currentPlayer.id] : 1}</p>
@@ -479,6 +573,26 @@ class GameplayComponent extends React.Component {
                     {
                         this.state.payTaxButtonEnabled &&
                         <button onClick={this.payGovtTax} >PAY TAX</button>
+                    }
+
+                    {
+                        this.state.collectSalaryButtonEnabled &&
+                        <button onClick={this.collectSalary}>COLLECT SALARY</button>
+                    }
+
+                    {
+                        this.state.pickCommunityCardButtonEnabled &&
+                        <button onClick={this.pickCommunityCard}>PICK COMMUNITY CARD</button>
+                    }
+
+                    {
+                        this.state.pickChanceCardButtonEnabled &&
+                        <button onClick={this.pickChanceCard}>PICK CHANCE CARD</button>
+                    }
+
+                    {
+                        this.state.continueButtonEnabled &&
+                        <button onClick={this.continueGameplay}>CONTINUE</button>
                     }
                 </div>
             </div>
