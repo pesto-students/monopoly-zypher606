@@ -150,6 +150,7 @@ class GameplayComponent extends React.Component {
     }
 
     nextPlayer() {
+        this.resetButtonModes();
 
         this.setState({ selectedBlock: null, rollDiceButtonEnabled: true });
 
@@ -196,7 +197,7 @@ class GameplayComponent extends React.Component {
         }
 
         // Keepin it here for now.
-        this.resetButtonModes();
+        // this.resetButtonModes();
     }
 
     payRent = () => {
@@ -251,7 +252,7 @@ class GameplayComponent extends React.Component {
 
 
         
-        this.resetButtonModes();
+        // this.resetButtonModes();
 
     }
 
@@ -293,11 +294,31 @@ class GameplayComponent extends React.Component {
     passPropertyForAuction = () => {
         
         this.nextPlayer();
-        this.resetButtonModes();
+        // this.resetButtonModes();
     }
 
     payUtilityBill = () => {
-        
+        const { currentPlayer, selectedBlock, bank } = this.state;
+
+        if (currentPlayer.balance >= selectedBlock.price) {
+            currentPlayer.balance -= selectedBlock.price; // Deduct from user
+            bank.balance += selectedBlock.price; // Add money to bank
+
+            this.setState({ currentPlayer, selectedBlock, bank });
+            
+            window.alert('Bill paid successfully');
+            
+            this.nextPlayer();
+            
+        } else {
+            window.alert("You don't have sufficient balance! Mortgage something or sell a property!");
+
+            // Pass Buying property which will lead to auction
+            this.nextPlayer();
+        }
+
+        // Keepin it here for now.
+        // this.resetButtonModes();
     }
     
     
