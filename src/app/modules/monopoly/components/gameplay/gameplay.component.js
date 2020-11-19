@@ -41,6 +41,7 @@ class GameplayComponent extends React.Component {
             passPropertyForAuction: false,
             payPropertyRentButtonEnabled: false,
             payUtilityBillsButtonEnabled: false,
+            payTaxButtonEnabled: false,
             
             wildActionsButtonEnabled: false,
         };
@@ -145,7 +146,7 @@ class GameplayComponent extends React.Component {
 
         this.setState({ rollDiceButtonEnabled: false });
 
-        this.processChanceForCorrespondingBLock(selectedBlock, currentPlayer);
+        this.processChanceForCorrespondingBLock(selectedBlock, currentPlayer, currentPlayer.position);
 
     }
 
@@ -264,15 +265,19 @@ class GameplayComponent extends React.Component {
             passPropertyForAuction: false,
             payPropertyRentButtonEnabled: false,
             payUtilityBillsButtonEnabled: false,
-            
+            payTaxButtonEnabled: false,
+
             wildActionsButtonEnabled: false,
         });
     }
-    processChanceForCorrespondingBLock(selectedBlock, currentPlayer) {
+    processChanceForCorrespondingBLock(selectedBlock, currentPlayer, position) {
         const group = selectedBlock.groupNumber;
 
         if (group === "") {
             // Wind actions
+            if (position === 4 || position === 38) {
+                this.setState({ payTaxButtonEnabled: true });
+            }
         } else if (group === 1) {
             // Govt Taxes
         } else if (group === 2) {
@@ -319,6 +324,29 @@ class GameplayComponent extends React.Component {
 
         // Keepin it here for now.
         // this.resetButtonModes();
+    }
+
+    payGovtTax = () => {
+        const { currentPlayer, selectedBlock, bank } = this.state;
+
+        const pricetext = selectedBlock.pricetext;
+        const tax = parseInt(pricetext.replace('Pay $', ''));
+        if (currentPlayer.balance >= tax) {
+            currentPlayer.balance -= tax; // Deduct from user
+            bank.balance += tax; // Add money to bank
+
+            this.setState({ currentPlayer, bank });
+            
+            window.alert('Tax paid successfully');
+            
+            this.nextPlayer();
+            
+        } else {
+            window.alert("You don't have sufficient balance! Mortgage something or sell a property!");
+
+            // Pass Buying property which will lead to auction
+            this.nextPlayer();
+        }
     }
     
     
@@ -446,6 +474,11 @@ class GameplayComponent extends React.Component {
                         this.state.payUtilityBillsButtonEnabled &&
                         <button onClick={this.payUtilityBill} >PAY BILL</button>
 
+                    }
+
+                    {
+                        this.state.payTaxButtonEnabled &&
+                        <button onClick={this.payGovtTax} >PAY TAX</button>
                     }
                 </div>
             </div>
