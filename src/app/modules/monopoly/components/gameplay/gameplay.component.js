@@ -4,6 +4,7 @@ import gameBlocks from '../../../../../data/gameBlocks.json';
 import communityCards from '../../../../../data/communityCards.json';
 import chanceCards from '../../../../../data/chanceCards.json';
 import boardBackground from '../../../../../assets/game-board.jpg'
+import boardBackground2 from '../../../../../assets/board_2.png';
 import dice1 from '../../../../../assets/Die_1.png'
 import dice2 from '../../../../../assets/Die_2.png'
 import dice3 from '../../../../../assets/Die_3.png'
@@ -24,10 +25,13 @@ class GameplayComponent extends React.Component {
             return g;
         });
 
+        const players = JSON.parse(localStorage.getItem('players'));
+        const playersCount = parseInt(localStorage.getItem('playersCount'));
+
         this.state = { 
             width: 0, 
             height: 0,
-            players: [],
+            players: players.slice(0, playersCount),
             
             bank: {
                 balance: 2000
@@ -36,7 +40,7 @@ class GameplayComponent extends React.Component {
             chanceCards: chanceCards,
             communityCards: communityCards,
 
-            currentPlayer: null,
+            currentPlayer: players[0],
             currentPlayerIndex: 0,
             dice1: 1,
             dice2: 1,
@@ -72,7 +76,7 @@ class GameplayComponent extends React.Component {
         this.updateWindowDimensions();
         window.addEventListener('resize', this.updateWindowDimensions);
 
-        this.initPlayers();
+        // this.initPlayers();
         this.initBank();
         this.initBoard();
     }
@@ -156,7 +160,8 @@ class GameplayComponent extends React.Component {
         const dice2 = Math.floor(Math.random() * (max - min) + min) + 1;
         
         
-        const total = dice1 + dice2;
+        // const total = dice1 + dice2;
+        const total = 4;
         console.log(total, dice1, dice2);
         console.log(this.state.board)
         
@@ -318,6 +323,10 @@ class GameplayComponent extends React.Component {
             } else if (position === 7 || position === 22 || position === 35) {
                 // Chance card pick
                 this.setState({ pickChanceCardButtonEnabled: true });
+            } else if (position === 30) {
+                // Go to Jail
+                this.movePlayerToJail();
+                this.nextPlayer();
             }
         } else if (group === 1) {
             // Properties which doesn't take rent
@@ -455,6 +464,16 @@ class GameplayComponent extends React.Component {
     tryWildCard() {
         // Execute the picked wild card
     }
+
+    movePlayerToJail() {
+        const {currentPlayer} = this.state;
+        currentPlayer.position = 10;
+        currentPlayer.inJail = true;
+
+        window.alert('Sending you to Jail!');
+        this.setState({currentPlayer});
+
+    }
     
     
     render() {
@@ -470,7 +489,8 @@ class GameplayComponent extends React.Component {
         return (
           <>
             <div className="background">
-                <img className="board-image" alt="board-background" style={{ height: `${this.state.height}px`, left: `calc(50% - ${this.state.height / 2}px)` }}  src={boardBackground} />
+                {/* <img className="board-image" alt="board-background" style={{ height: `${this.state.height}px`, left: `calc(50% - ${this.state.height / 2}px)` }}  src={boardBackground} /> */}
+                <img className="board-image" alt="board-background" style={{ height: `${this.state.height}px`, left: `calc(50% - ${this.state.height / 2}px)` }}  src={boardBackground2} />
             </div>
             
             {/* {this.board} */}

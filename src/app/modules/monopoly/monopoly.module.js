@@ -6,7 +6,7 @@ import GameplayComponent from './components/gameplay/gameplay.component';
 function Monopoly(props) {
     return (
         <Router basename={props.match.path}>
-            <Redirect exact from="/" to="gameplay" />
+            {/* <Redirect exact from="/" to="gameplay" /> */}
             <Route exact path="/" component={ HomeComponent } />
             <Route exact path="/gameplay" component={ GameplayComponent } />
         </Router>
