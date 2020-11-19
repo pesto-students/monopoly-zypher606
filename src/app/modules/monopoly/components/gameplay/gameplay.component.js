@@ -160,8 +160,8 @@ class GameplayComponent extends React.Component {
         const dice2 = Math.floor(Math.random() * (max - min) + min) + 1;
         
         
-        // const total = dice1 + dice2;
-        const total = 4;
+        const total = dice1 + dice2;
+        // const total = 4; // COnst increment for testing
         console.log(total, dice1, dice2);
         console.log(this.state.board)
         
