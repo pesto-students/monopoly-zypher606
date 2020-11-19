@@ -17,16 +17,19 @@
 .board-image {
     position: fixed;
     top: 0px;
+    -webkit-filter: blur(2px); /* Safari 6.0 - 9.0 */
+    filter: blur(2px);
 }
 
 .gameplay {
-    border: solid red;
+    // border: solid red;
     position: fixed;
     top: 0px;
+    background-color: rgba(105, 105, 105, 0.7);
 }
 
 .board-row {
-    border: solid green;
+    // border: solid green;
     width: 100%;
     height: 13%;
     position: absolute;
@@ -35,20 +38,20 @@
     .corner-block {
         width: 13%;
         height: 100%;
-        border: solid 2px red;
+        // border: solid 2px red;
         cursor: pointer;
     }
     
     .block {
         width: 9%;
         height: 100%;
-        border: solid pink;
+        // border: solid pink;
         cursor: pointer;
     }
 }
 
 .board-col {
-    border: solid purple;
+    // border: solid purple;
     width: 13%;
     height: 74%;
     position: absolute;
@@ -59,25 +62,80 @@
     .block {
         width: 100%;
         height: 11.2%;
-        border: solid pink;
+        // border: solid pink;
         cursor: pointer;
     }
 }
 
 .board-top {
     top: 0px;
+
+    .owned-by-block {
+        line-height: 18px;
+        font-size: 12px;
+        text-align: center;
+        color: #fff;
+        width: 100%;
+        height: 18px;
+        background: red;
+        position: relative;
+        top: calc(100% - 18px);
+
+    }
 }
 
 .board-bottom {
     bottom: 0px;
+
+    .owned-by-block {
+        line-height: 18px;
+        font-size: 12px;
+        text-align: center;
+        color: #fff;
+        width: 100%;
+        height: 18px;
+        background: red;
+        position: relative;
+        top: 0%;
+    }
 }
 
 .board-left {
-    left: 0px
+    left: 0px;
+
+    .owned-by-block {
+        width: 18px;
+        height: 100%;
+        background: red;
+        position: relative;
+        top: 0%;
+        float: right;
+        color: #fff;
+        padding-top: 18%;
+        text-align: center;
+        font-size: 12px;
+    }
 }
 
 .board-right {
     right:  0px;
+
+    .owned-by-block {
+        width: 18px;
+        height: 100%;
+        background: red;
+        position: relative;
+        top: 0%;
+        float: left;
+        color: #fff;
+        padding-top: 18%;
+        text-align: center;
+        font-size: 12px;
+    }
+
+    .chance-users {
+        float: right;
+    }
 }
 
 .action-panel {
@@ -161,3 +219,19 @@
     width: 20%;
     padding-left: 2.1%;
 }
+
+
+.chance-users-collection {
+    width: 100%;
+    height: 16px;
+    margin-top: 28%;
+
+    .chance-users {
+        width: 16px;
+        background: red;
+        height: 100%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+

@@ -20,6 +20,7 @@ class GameplayComponent extends React.Component {
             g.id = index;
             g.owned_by = null;
             g.visited_players_count = {};
+            g.players_landed = [];
             return g;
         });
 
@@ -46,7 +47,13 @@ class GameplayComponent extends React.Component {
             buyPropertyButtonEnabled: false,
             passPropertyForAuction: false,
             payPropertyRentButtonEnabled: false,
+
+            buyRoadButtonEnabled: false,
+            payRoadTaxButtonEnabled: false,
+
+            buyUtilityCompanyButtonEnabled: false,
             payUtilityBillsButtonEnabled: false,
+
             payTaxButtonEnabled: false,
             collectSalaryButtonEnabled: false,
             pickCommunityCardButtonEnabled: false,
@@ -151,6 +158,7 @@ class GameplayComponent extends React.Component {
         
         const total = dice1 + dice2;
         console.log(total, dice1, dice2);
+        console.log(this.state.board)
         
         let final_pos = currentPlayer.position + total;
         if (final_pos >= this.state.board.length) final_pos -= this.state.board.length;
@@ -318,11 +326,18 @@ class GameplayComponent extends React.Component {
                     this.setState({ continueGameplay: true });
             } else if (selectedBlock.owned_by == null &&
                 typeof selectedBlock.price === 'number') {
-                    this.setState({ buyPropertyButtonEnabled: true, continueGameplay: true });
+                    this.setState({ buyRoadButtonEnabled: true, continueGameplay: true });
             }
         } else if (group === 2) {
-            // Pay utilities bill
-            this.setState({ payUtilityBillsButtonEnabled: true });
+            // UTILITIES PROVEIDRS
+            // this.setState({ payUtilityBillsButtonEnabled: true });
+            if (selectedBlock.owned_by != null &&
+                selectedBlock.owned_by.id !== currentPlayer.id) {
+                    this.setState({ continueGameplay: true });
+            } else if (selectedBlock.owned_by == null &&
+                typeof selectedBlock.price === 'number') {
+                    this.setState({ buyUtilityCompanyButtonEnabled: true, continueGameplay: true });
+            }
         } else if ([3,4,5,6,7,8,9,10].includes(group)) {
             // Poperty block
             // 1. Pay rent, 2. Buy property, 3. Pass
@@ -443,6 +458,14 @@ class GameplayComponent extends React.Component {
     
     
     render() {
+
+        const { board, players } = this.state;
+        const bottomBoard = board.slice(1, 10).reverse();
+        const leftBoard = board.slice(11, 20).reverse();
+        const topBoard = board.slice(21, 30);
+        const rightBoard = board.slice(31, 40);
+        
+        console.log(bottomBoard, players)
        
         return (
           <>
@@ -455,59 +478,145 @@ class GameplayComponent extends React.Component {
             <div style={{ height: `${this.state.height}px`, width: `${this.state.height}px`, left: `calc(50% - ${this.state.height / 2}px)` }} className="gameplay board">
                 <div className="board-row board-bottom">
                     <div className="corner-block">
-
+                            
+                        <div className="chance-users-collection">
+                            {
+                                players.filter(p => p.position === board[10].id).map(player => {
+                                    return (
+                                        <div style={{backgroundColor: player.color}} className="chance-users"></div>
+                                    )
+                                })
+                            }
+                        </div>
                     </div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="corner-block">
 
+                    {
+                        bottomBoard.map(board => {
+                            return (
+                                <div className="block">
+                                    {
+                                        board.owned_by != null &&
+                                        <div style={{backgroundColor: board.owned_by.color}} className="owned-by-block">{board.owned_by.id}</div>
+                                    }
+                                    <div className="chance-users-collection">
+                                        {
+                                            players.filter(p => p.position === board.id).map(player => {
+                                                return (
+                                                    <div style={{backgroundColor: player.color}} className="chance-users"></div>
+                                                )
+                                            })
+                                        }
+                                    </div>
+                                </div>
+                            )
+                        })
+                    }
+                    
+                    <div className="corner-block">
+                        <div className="chance-users-collection">
+                            {
+                                players.filter(p => p.position === board[0].id).map(player => {
+                                    return (
+                                        <div style={{backgroundColor: player.color}} className="chance-users"></div>
+                                    )
+                                })
+                            }
+                        </div>
                     </div>
                 </div>
                 <div className="board-col board-left">
-                <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
+                    {
+                        leftBoard.map(board => {
+                            return (
+                                <div className="block">
+                                    {
+                                        board.owned_by != null &&
+                                        <div style={{backgroundColor: board.owned_by.color}} className="owned-by-block">{board.owned_by.id}</div>
+                                    }
+                                    <div className="chance-users-collection">
+                                        {
+                                            players.filter(p => p.position === board.id).map(player => {
+                                                return (
+                                                    <div style={{backgroundColor: player.color}} className="chance-users"></div>
+                                                )
+                                            })
+                                        }
+                                    </div>
+                                </div>
+                            )
+                        })
+                    }
+                    
                 </div>
                 <div className="board-row board-top">
                     <div className="corner-block">
-
+                        <div className="chance-users-collection">
+                            {
+                                players.filter(p => p.position === board[20].id).map(player => {
+                                    return (
+                                        <div style={{backgroundColor: player.color}} className="chance-users"></div>
+                                    )
+                                })
+                            }
+                        </div>
                     </div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="corner-block">
+                    
+                    {
+                        topBoard.map(board => {
+                            return (
+                                <div className="block">
+                                    {
+                                        board.owned_by != null &&
+                                        <div style={{backgroundColor: board.owned_by.color}} className="owned-by-block">{board.owned_by.id}</div>
+                                    }
+                                    <div className="chance-users-collection">
+                                        {
+                                            players.filter(p => p.position === board.id).map(player => {
+                                                return (
+                                                    <div style={{backgroundColor: player.color}} className="chance-users"></div>
+                                                )
+                                            })
+                                        }
+                                    </div>
+                                </div>
+                            )
+                        })
+                    }
 
+                    <div className="corner-block">
+                        <div className="chance-users-collection">
+                            {
+                                players.filter(p => p.position === board[30].id).map(player => {
+                                    return (
+                                        <div style={{backgroundColor: player.color}} className="chance-users"></div>
+                                    )
+                                })
+                            }
+                        </div>
                     </div>
                 </div>
                 <div className="board-col board-right">
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
-                    <div className="block"></div>
+                    {
+                        rightBoard.map(board => {
+                            return (
+                                <div className="block">
+                                    {
+                                        board.owned_by != null &&
+                                        <div style={{backgroundColor: board.owned_by.color}} className="owned-by-block">{board.owned_by.id}</div>
+                                    }
+                                    <div className="chance-users-collection">
+                                        {
+                                            players.filter(p => p.position === board.id).map(player => {
+                                                return (
+                                                    <div style={{backgroundColor: player.color}} className="chance-users"></div>
+                                                )
+                                            })
+                                        }
+                                    </div>
+                                </div>
+                            )
+                        })
+                    }
                 </div>
             </div>
             
@@ -564,11 +673,28 @@ class GameplayComponent extends React.Component {
                         <button onClick={this.passPropertyForAuction} >PASS</button>
                     }
 
+
+                    {
+                        this.state.buyRoadButtonEnabled &&
+                        <button onClick={this.buyProperty} >BUY SERVICE COMPANY</button>
+                    }
+
+                    {
+                        this.state.payRoadTaxButtonEnabled &&
+                        <button onClick={this.payRoadTax} >PAY ROAD TAX</button>
+                    }
+
+                    {
+                        this.state.buyUtilityCompanyButtonEnabled &&
+                        <button onClick={this.buyProperty} >BUY UTILITY COMPANY</button>
+                    }
+
                     {
                         this.state.payUtilityBillsButtonEnabled &&
-                        <button onClick={this.payUtilityBill} >PAY BILL</button>
-
+                        <button onClick={this.payUtilityBill} >PAY UTILITY BILL</button>
                     }
+
+
 
                     {
                         this.state.payTaxButtonEnabled &&
