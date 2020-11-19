@@ -17,6 +17,7 @@ class GameplayComponent extends React.Component {
         gameBlocks.map((g, index) => {
             g.id = index;
             g.owned_by = null;
+            g.visited_players_count = {};
             return g;
         });
 
@@ -24,14 +25,24 @@ class GameplayComponent extends React.Component {
             width: 0, 
             height: 0,
             players: [],
-            bank: null,
+            bank: {
+                balance: 2000
+            },
             board: gameBlocks,
             currentPlayer: null,
             currentPlayerIndex: 0,
             dice1: 1,
             dice2: 1,
-            displayBlock: null,
+            selectedBlock: null,
             
+            // action buttons
+            rollDiceButtonEnabled: true,
+            buyPropertyButtonEnabled: false,
+            passPropertyForAuction: false,
+            payPropertyRentButtonEnabled: false,
+            payUtilityBillsButtonEnabled: false,
+            
+            wildActionsButtonEnabled: false,
         };
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
 
@@ -95,12 +106,13 @@ class GameplayComponent extends React.Component {
 
         this.setState({players, currentPlayer: players[0], currentPlayerIndex: 0});
 
-        this.setState({displayBlock: this.state.board[0]});
+        // this.setState({selectedBlock: this.state.board[0]});
 
     }
 
     initBank() {
-        this.setState({bank: {balance: 20000, houses: 20, hotels: 20}})
+        // No houses and hotels count needed fot this version
+        this.setState({bank: {balance: 2000, houses: 20, hotels: 20}})
     }
 
     initBoard() {
@@ -126,13 +138,21 @@ class GameplayComponent extends React.Component {
         currentPlayer.position = final_pos;
         
 
-        this.setState({ currentPlayer, dice1, dice2, displayBlock: this.state.board[currentPlayer.position]});
+        const selectedBlock = this.state.board[currentPlayer.position];
+        this.setState({ currentPlayer, dice1, dice2, selectedBlock });
 
         // this.nextPlayer();
+
+        this.setState({ rollDiceButtonEnabled: false });
+
+        this.processChanceForCorrespondingBLock(selectedBlock, currentPlayer);
 
     }
 
     nextPlayer() {
+
+        this.setState({ selectedBlock: null, rollDiceButtonEnabled: true });
+
         let newIndex = this.state.currentPlayerIndex + 1;
         if  (newIndex >= this.state.players.length) newIndex = 0;
 
@@ -147,44 +167,140 @@ class GameplayComponent extends React.Component {
     }
 
     buyProperty = () => {
-        const { currentPlayer, displayBlock } = this.state;
+        const { currentPlayer, selectedBlock, bank } = this.state;
         
-        if (!displayBlock.price && typeof displayBlock.price != 'number') {
+        if (!selectedBlock.price && typeof selectedBlock.price != 'number') {
             window.alert('Cannot buy this block');
             return;
         }
 
-        if (currentPlayer.balance >= displayBlock.price) {
-            currentPlayer.balance -= displayBlock.price;
-            currentPlayer.properties.push(displayBlock);
+        if (currentPlayer.balance >= selectedBlock.price) {
+            currentPlayer.balance -= selectedBlock.price; // Deduct from user
+            bank.balance += selectedBlock.price; // Add money to bank
             
-            displayBlock.owned_by = currentPlayer;
+            currentPlayer.properties.push(selectedBlock);
+            
+            selectedBlock.owned_by = currentPlayer;
 
-            this.setState({ currentPlayer, displayBlock });
+            this.setState({ currentPlayer, selectedBlock, bank });
+            
             window.alert('Property bought successfully');
+            
+            this.nextPlayer();
+            
+        } else {
+            window.alert("You don't have sufficient balance!");
+
+            // Pass Buying property which will lead to auction
+            this.nextPlayer();
         }
+
+        // Keepin it here for now.
+        this.resetButtonModes();
     }
 
     payRent = () => {
-        const { currentPlayer, displayBlock } = this.state;
+        const { currentPlayer, selectedBlock } = this.state;
+
         
-        if (!displayBlock.rent1 && typeof displayBlock.rent1 != 'number') {
-            window.alert('Cannot pay rent for this block');
-            return;
+        // if (!selectedBlock.rent1 && typeof selectedBlock.rent1 != 'number') {
+        //     window.alert('Cannot pay rent for this block');
+        //     return;
+        // }
+
+        let rent;
+        switch (selectedBlock.visited_players_count[currentPlayer.id]) {
+            case undefined:
+                rent = selectedBlock.baserent;
+                break;
+            case 1:
+                rent = selectedBlock.rent1;
+                break;
+            case 2:
+                rent = selectedBlock.rent2;
+                break;
+            case 3:
+                rent = selectedBlock.rent3;
+                break;
+            case 4:
+                rent = selectedBlock.rent4;
+                break;
+            default:
+                rent = selectedBlock.rent4;
         }
+        
+        selectedBlock.visited_players_count[currentPlayer.id] ? 
+            selectedBlock.visited_players_count[currentPlayer.id] += 1 :
+            selectedBlock.visited_players_count[currentPlayer.id] = 1;
 
-        if (currentPlayer.balance >= displayBlock.rent1) {
-            currentPlayer.balance -= displayBlock.rent1;
+        if (currentPlayer.balance >= rent) {
+            currentPlayer.balance -= rent;
 
-            displayBlock.owned_by.balance += displayBlock.rent1;
+            selectedBlock.owned_by.balance += rent;
 
-            this.setState({ currentPlayer, displayBlock });
+            this.setState({ currentPlayer, selectedBlock });
+
             window.alert('Rent paid successfully successfully');
+
+            this.nextPlayer();
+        } else {
+            // Morgaze paisa from bank or
+            // Sell a property
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!
         }
 
+
+        
+        this.resetButtonModes();
 
     }
 
+    resetButtonModes() {
+        this.setState({
+            // action buttons
+            rollDiceButtonEnabled: true,
+            buyPropertyButtonEnabled: false,
+            passPropertyForAuction: false,
+            payPropertyRentButtonEnabled: false,
+            payUtilityBillsButtonEnabled: false,
+            
+            wildActionsButtonEnabled: false,
+        });
+    }
+    processChanceForCorrespondingBLock(selectedBlock, currentPlayer) {
+        const group = selectedBlock.groupNumber;
+
+        if (group === "") {
+            // Wind actions
+        } else if (group === 1) {
+            // Govt Taxes
+        } else if (group === 2) {
+            // Pay utilities bill
+            this.setState({ payUtilityBillsButtonEnabled: true });
+        } else if ([3,4,5,6,7,8,9,10].includes(group)) {
+            // Poperty block
+            // 1. Pay rent, 2. Buy property, 3. Pass
+            if (selectedBlock.owned_by != null &&
+                selectedBlock.owned_by.id !== currentPlayer.id) {
+                    this.setState({ payPropertyRentButtonEnabled: true });
+            } else if (selectedBlock.owned_by == null &&
+                typeof selectedBlock.price === 'number') {
+                    this.setState({ buyPropertyButtonEnabled: true, passPropertyForAuction: true });
+            }
+        }
+    }
+
+    passPropertyForAuction = () => {
+        
+        this.nextPlayer();
+        this.resetButtonModes();
+    }
+
+    payUtilityBill = () => {
+        
+    }
+    
+    
     
     render() {
        
@@ -256,31 +372,60 @@ class GameplayComponent extends React.Component {
             </div>
             
 
+            <div className="bank-details">
+                <h4>
+                    Bank: ${ this.state.bank.balance }
+                </h4>
+            </div>
+
             <div className="details-panel">
                 <div className="block-view">
-                    <div style={{backgroundColor: this.state.displayBlock?.color}} className="head-color">
-                        <h4>#{this.state.displayBlock?.id} {this.state.displayBlock?.name}</h4>
+                    <div style={{backgroundColor: this.state.selectedBlock?.color}} className="head-color">
+                        <h4>#{this.state.selectedBlock?.id} {this.state.selectedBlock?.name}</h4>
                     </div>
 
-                    <div className="price-text">
-                        {/* <h4>50</h4> */}
-                        <h4>{this.state.displayBlock?.pricetext}</h4>
-                    </div>
+                    {   this.state.selectedBlock != null &&
+                        <div className="price-text">
+                            <h4>{this.state.selectedBlock.pricetext}</h4>
+                            
+                            <h5>Rents: {this.state.selectedBlock.baserent}, {this.state.selectedBlock.rent1}, {this.state.selectedBlock.rent2}, {this.state.selectedBlock.rent3}, {this.state.selectedBlock.rent4}, {this.state.selectedBlock.rent5}</h5>
+                            {
+                                this.state.payPropertyRentButtonEnabled &&
+                                <p>Visit: {this.state.selectedBlock.visited_players_count[this.state.currentPlayer.id] ? this.state.selectedBlock.visited_players_count[this.state.currentPlayer.id] : 1}</p>
+                            }
+                        </div>
+                    }
+
+                    {
+                        this.state.selectedBlock == null &&
+                        <div className="roll-details-text">
+                            <h4>Roll your dice Mr. {this.state.currentPlayer?.name}</h4>
+                        </div>
+                    }
+                    
                     
                 </div>
 
                 <div className="actions">
                     {
-                        this.state.displayBlock?.owned_by === null &&
-                        typeof this.state.displayBlock?.price === 'number' &&
+                        this.state.buyPropertyButtonEnabled &&
                         <button onClick={this.buyProperty} >BUY NOW</button>
                     }
                     {
-                        this.state.displayBlock?.owned_by !== null &&
-                        this.state.displayBlock?.owned_by.id !== this.state.currentPlayer?.id &&
+                        this.state.payPropertyRentButtonEnabled &&
                         <button onClick={this.payRent} >PAY RENT</button>
                     }
-                    <button>PASS</button>
+
+                    {
+                        this.state.passPropertyForAuction &&
+                        <button onClick={this.passPropertyForAuction} >PASS</button>
+                    }
+
+                    {
+                        this.state.payUtilityBillsButtonEnabled &&
+                        <button onClick={this.payUtilityBill} >PAY BILL</button>
+
+                    }
                 </div>
             </div>
 
@@ -295,7 +440,7 @@ class GameplayComponent extends React.Component {
                         <img src={this.diceMap[this.state.dice2]} alt='dice-icon 2'/>
                     </div>
                 </div>
-                <button onClick={this.rollDice}>Roll Dice</button>
+                <button onClick={this.rollDice} disabled={!this.state.rollDiceButtonEnabled}>Roll Dice</button>
                 <button onClick={this.nextAction}>NEXT</button>
 
                 <hr/>

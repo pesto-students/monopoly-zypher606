@@ -123,6 +123,12 @@
             text-align: center;
         }
 
+        .roll-details-text {
+            padding-top: 100px;
+            width: 100%;
+            text-align: center;
+        }
+
         
     }
 }
@@ -148,4 +154,10 @@
         background-color: green;
         color: #fff;
     }
+}
+
+.bank-details {
+    position: fixed;
+    width: 20%;
+    padding-left: 2.1%;
 }
