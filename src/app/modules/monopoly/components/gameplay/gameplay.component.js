@@ -25,6 +25,12 @@ class GameplayComponent extends React.Component {
             return g;
         });
 
+        const communityCardsMap = {}
+        communityCards.map((c, index) => communityCardsMap[c] = index );
+
+        const chanceCardsMap = {};
+        chanceCards.map((c, index) => chanceCardsMap[c] = index);
+
         const players = JSON.parse(localStorage.getItem('players'));
         const playersCount = parseInt(localStorage.getItem('playersCount'));
 
@@ -39,6 +45,8 @@ class GameplayComponent extends React.Component {
             board: gameBlocks,
             chanceCards: chanceCards,
             communityCards: communityCards,
+            chanceCardsMap,
+            communityCardsMap,
 
             currentPlayer: players[0],
             currentPlayerIndex: 0,
@@ -65,6 +73,8 @@ class GameplayComponent extends React.Component {
             continueButtonEnabled: false,
             
             wildActionsButtonEnabled: false,
+
+            payJailChargesButtonEnabled: false,
         };
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
 
@@ -161,7 +171,7 @@ class GameplayComponent extends React.Component {
         
         
         const total = dice1 + dice2;
-        // const total = 4; // COnst increment for testing
+        // const total = 7; // COnst increment for testing
         console.log(total, dice1, dice2);
         console.log(this.state.board)
         
@@ -193,6 +203,10 @@ class GameplayComponent extends React.Component {
         const currentPlayer = this.state.players[currentPlayerIndex];
 
         this.setState({currentPlayer, currentPlayerIndex})
+
+        if (currentPlayer.inJail) {
+            this.setState({ payJailChargesButtonEnabled: true });
+        }
     }
 
     nextAction = () => {
@@ -325,8 +339,10 @@ class GameplayComponent extends React.Component {
                 this.setState({ pickChanceCardButtonEnabled: true });
             } else if (position === 30) {
                 // Go to Jail
-                this.movePlayerToJail();
-                this.nextPlayer();
+                setTimeout(() => {
+                    this.movePlayerToJail();
+                    this.nextPlayer();
+                }, 1000);
             }
         } else if (group === 1) {
             // Properties which doesn't take rent
@@ -439,9 +455,9 @@ class GameplayComponent extends React.Component {
 
         currentPlayer.communityCards.push(randomCard);
         
-        window.alert(randomCard);
-
         this.setState({ communityCards, currentPlayer })
+        
+        window.alert(randomCard);
 
         this.nextPlayer();
 
@@ -450,29 +466,242 @@ class GameplayComponent extends React.Component {
     pickChanceCard = () => {
         const { chanceCards, currentPlayer } = this.state;
         const randomIndex = Math.floor(Math.random() * chanceCards.length);
-        const randomCard = chanceCards.splice(randomIndex, 1);
+        // const randomIndex = 2;
 
-        currentPlayer.chanceCards.push(randomCard);
+        // const randomCard = chanceCards.splice(randomIndex, 1);
+        const randomCard = chanceCards[randomIndex];
+
+        // currentPlayer.chanceCards.push(randomCard);
         
         window.alert(randomCard);
 
-        this.setState({ chanceCards, currentPlayer })
+        this.tryWildCard(randomCard, randomIndex, 'chance');
+
+        this.setState({ chanceCards, currentPlayer });
 
         this.nextPlayer();
     }
 
-    tryWildCard() {
+    tryWildCard(card, cardIndex, cardType) {
+
+        console.log(card,cardIndex,cardType)
         // Execute the picked wild card
+        const { chanceCards, communityCards, chanceCardsMap, communityCardsMap, currentPlayer, players } = this.state;
+        console.log(chanceCardsMap[card])
+        if (cardType === 'chance') {
+            switch (chanceCardsMap[card]) {
+                case 0:
+                    chanceCards.splice(cardIndex, 1);
+                    currentPlayer.chanceCards.push(card);
+                    // DO nothing for this
+                    break;
+                case 1:
+                    //  "Make General Repairs on All Your Property. For each house pay $25. For each hotel $100.",
+                    break;
+                case 2:
+                    // "Speeding fine $15."
+                    console.log('in here')
+                    this.payMoneyToBank(currentPlayer, 15);
+                    break;
+                case 3:
+                    //"You have been elected chairman of the board. Pay each player $50."
+                    players.filter(p => p.id !== currentPlayer.id).map(targetPlayer => {
+                        this.sendMoneyFromAtoB(currentPlayer, targetPlayer, 50);
+                    });
+                    break;
+                case 4:
+                    // "Go back three spaces.",
+                    this.jumpPlayerBySteps(currentPlayer, -3);
+                    break;
+                case 5:
+                    // "ADVANCE TO THE NEAREST UTILITY. IF UNOWNED, you may buy it from the Bank. IF OWNED, throw dice and pay owner a total ten times the amount thrown.",
+                    // TO do
+                    break;
+                case 6:
+                    // "Bank pays you dividend of $50."
+                    this.getMoneyFromBank(currentPlayer, 50);
+                    break;
+                case 7:
+                    //   "ADVANCE TO THE NEAREST RAILROAD. If UNOWNED, you may buy it from the Bank. If OWNED, pay owner twice the rental to which they are otherwise entitled.",
+                    break;
+                case 8:
+                    // "Pay poor tax of $15.",
+                    this.payMoneyToBank(currentPlayer, 15);
+                    break;
+                case 9:
+                    //   "Take a trip to Reading Rail Road. If you pass 'GO' collect $200.",
+                    // To do
+                    break;
+                case 10:
+                    //   "ADVANCE to Boardwalk.",
+                    break;
+                case 11:
+                    //   "ADVANCE to Illinois Avenue. If you pass 'GO' collect $200.",
+                    break;
+                case 12:
+                    // "Your building loan matures. Collect $150.",
+                    this.getMoneyFromBank(currentPlayer, 150);
+                    break;
+                case 13:
+                    // "ADVANCE TO THE NEAREST RAILROAD. If UNOWNED, you may buy it from the Bank. If OWNED, pay owner twice the rental to which they are otherwise entitled.":
+                    break;
+                case 14:
+                    // "ADVANCE to St. Charles Place. If you pass 'GO' collect $200.",
+                    break;
+                case 15:
+                    // "Go to Jail. Go Directly to Jail. Do not pass 'GO'. Do not collect $200."
+                    this.movePlayerToJail();
+                    break;
+                default:
+                    break;
+            }
+
+        } else if (cardType === 'community') {
+            switch (communityCardsMap[card]) {
+                case 0:
+                    // "Get out of Jail, Free. This card may be kept until needed or sold.",
+                    chanceCards.splice(cardIndex, 1);
+                    currentPlayer.chanceCards.push(card);
+                    // No nothing more as card is pushed
+                    break;
+                case 1:
+                    // "You have won second prize in a beauty contest. Collect $10.",
+                    this.getMoneyFromBank(currentPlayer, 10);
+                    break;
+                case 2:
+                    // "From sale of stock, you get $50.",
+                    this.getMoneyFromBank(currentPlayer, 50);
+                    break;
+                case 3:
+                    // "Life insurance matures. Collect $100.",
+                    this.getMoneyFromBank(currentPlayer, 100);
+                    break;
+                case 4:
+                    // "Income tax refund. Collect $20.",
+                    this.getMoneyFromBank(currentPlayer, 20);
+                    break;
+                case 5:
+                    // "Holiday fund matures. Receive $100.",
+                    this.getMoneyFromBank(currentPlayer, 100);
+                    break;
+                case 6:
+                    // "You inherit $100."
+                    this.getMoneyFromBank(currentPlayer, 100);
+                    break;
+                case 7:
+                    // "Receive $25 consultancy fee.",
+                    this.getMoneyFromBank(currentPlayer, 25);
+                    break;
+                case 8:
+                    // "Pay hospital fees of $100."
+                    this.payMoneyToBank(currentPlayer, 100);
+                    break;
+                case 9:
+                    // "Bank error in your favor. Collect $200."
+                    this.getMoneyFromBank(currentPlayer, 200);
+                    break;
+                case 10:
+                    //"Pay school fees of $50.",
+                    this.payMoneyToBank(currentPlayer, 50);
+                    break;
+                case 11:
+                    // "Doctor's fee. Pay $50.",
+                    this.payMoneyToBank(currentPlayer, 50);
+                    break;
+                case 12:
+                    // "It is your birthday. Collect $10 from every player.",
+                    // todo
+                    break;
+                case 13:
+                    // "Advance to 'GO' (Collect $200)",
+                    // TO do
+                    break;
+                case 14:
+                    // "You are assessed for street repairs. $40 per house. $115 per hotel.",
+                    // To do
+                    break;
+                case 15:
+                    // "Go to Jail. Go directly to Jail. Do not pass 'GO'. Do not collect $200."
+                    // TO do
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        this.setState({ currentPlayer });
+
+        
+    }
+
+    payMoneyToBank(player, amount) {
+        const { currentPlayer, bank } = this.state;
+
+        if (currentPlayer.balance >= amount) {
+            currentPlayer.balance -= amount; // Deduct from user
+            bank.balance += amount; // Add money to bank
+
+            this.setState({ bank });
+            
+            // window.alert('Tax paid successfully');
+            
+            // this.nextPlayer();
+            
+        } else {
+            window.alert("You don't have sufficient balance! Mortgage something or sell a property!");
+
+            // Pass Buying property which will lead to auction
+            // this.nextPlayer();
+        }
+    }
+
+    getMoneyFromBank(player, amount) {
+
+    }
+
+    sendMoneyFromAtoB(personA, personB, amount) {
+
+    }
+
+    jumpPlayerToPosition(player, position) {
+
+    }
+
+    jumpPlayerBySteps(player, steps) {
+
     }
 
     movePlayerToJail() {
+        window.alert('Sending you to Jail!');
         const {currentPlayer} = this.state;
         currentPlayer.position = 10;
         currentPlayer.inJail = true;
 
-        window.alert('Sending you to Jail!');
         this.setState({currentPlayer});
 
+    }
+
+    payJailCharges = () => {
+        const { currentPlayer, bank } = this.state;
+
+        const tax = 50;
+        if (currentPlayer.balance >= tax) {
+            currentPlayer.balance -= tax; // Deduct from user
+            bank.balance += tax; // Add money to bank
+
+            
+            window.alert('Charges paid successfully!');
+            
+            currentPlayer.inJail = false;
+            this.setState({ currentPlayer, bank });
+            // this.nextPlayer();
+            
+        } else {
+            window.alert("You don't have sufficient balance! Mortgage something or sell a property!");
+
+            // Pass Buying property which will lead to auction
+            // this.nextPlayer();
+        }
     }
     
     
@@ -670,9 +899,19 @@ class GameplayComponent extends React.Component {
 
                     {
                         this.state.selectedBlock == null &&
+                        this.state.currentPlayer.inJail !== true &&
                         <div className="roll-details-text">
                             <h4>Roll your dice Mr. {this.state.currentPlayer?.name}</h4>
                         </div>
+                    }
+
+                    {
+                        this.state.selectedBlock == null &&
+                        this.state.currentPlayer.inJail === true &&
+                        <div className="roll-details-text">
+                            <h4>Pay Bail fees Mr. {this.state.currentPlayer?.name} to continue</h4>
+                        </div>
+
                     }
                     
                     
@@ -737,6 +976,11 @@ class GameplayComponent extends React.Component {
                     }
 
                     {
+                        this.state.payJailChargesButtonEnabled &&
+                        <button onClick={this.payJailCharges}>PAY JAIL CHARGES</button>
+                    }
+
+                    {
                         this.state.continueButtonEnabled &&
                         <button onClick={this.continueGameplay}>CONTINUE</button>
                     }
@@ -754,7 +998,7 @@ class GameplayComponent extends React.Component {
                         <img src={this.diceMap[this.state.dice2]} alt='dice-icon 2'/>
                     </div>
                 </div>
-                <button onClick={this.rollDice} disabled={!this.state.rollDiceButtonEnabled}>Roll Dice</button>
+                <button onClick={this.rollDice} disabled={!this.state.rollDiceButtonEnabled || this.state.currentPlayer.inJail === true}>Roll Dice</button>
                 <button onClick={this.nextAction}>NEXT</button>
 
                 <hr/>
