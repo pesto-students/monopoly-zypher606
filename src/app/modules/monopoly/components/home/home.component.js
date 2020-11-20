@@ -107,15 +107,12 @@ class HomeComponent extends React.Component {
  
 
     render() {
-        const { errors } = this.state;
-        const { name, level } = this.state;
         return (
           <>
             <div className="container home-container">
                 <div className="row">
                     <div className="col-sm-12 intro-header">
                         <h3>Monopoly - The game</h3>
-                        <h4></h4>
                     </div>
                 </div>
                 <br></br>

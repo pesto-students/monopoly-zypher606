@@ -3,7 +3,6 @@ import "./gameplay.component.scss";
 import gameBlocks from '../../../../../data/gameBlocks.json';
 import communityCards from '../../../../../data/communityCards.json';
 import chanceCards from '../../../../../data/chanceCards.json';
-import boardBackground from '../../../../../assets/game-board.jpg'
 import boardBackground2 from '../../../../../assets/board_2.png';
 import dice1 from '../../../../../assets/Die_1.png'
 import dice2 from '../../../../../assets/Die_2.png'
@@ -505,7 +504,7 @@ class GameplayComponent extends React.Component {
                     break;
                 case 3:
                     //"You have been elected chairman of the board. Pay each player $50."
-                    players.filter(p => p.id !== currentPlayer.id).map(targetPlayer => {
+                    players.filter(p => p.id !== currentPlayer.id).forEach(targetPlayer => {
                         this.sendMoneyFromAtoB(currentPlayer, targetPlayer, 50);
                     });
                     break;
@@ -560,8 +559,8 @@ class GameplayComponent extends React.Component {
             switch (communityCardsMap[card]) {
                 case 0:
                     // "Get out of Jail, Free. This card may be kept until needed or sold.",
-                    chanceCards.splice(cardIndex, 1);
-                    currentPlayer.chanceCards.push(card);
+                    communityCards.splice(cardIndex, 1);
+                    currentPlayer.communityCards.push(card);
                     // No nothing more as card is pushed
                     break;
                 case 1:
