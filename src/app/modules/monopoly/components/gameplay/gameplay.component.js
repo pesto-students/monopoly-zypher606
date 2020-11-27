@@ -59,8 +59,8 @@ class GameplayComponent extends React.Component {
             passPropertyForAuction: false,
             payPropertyRentButtonEnabled: false,
 
-            buyRoadButtonEnabled: false,
-            payRoadTaxButtonEnabled: false,
+            buyRailRoadButtonEnabled: false,
+            payRailRoadTaxButtonEnabled: false,
 
             buyUtilityCompanyButtonEnabled: false,
             payUtilityBillsButtonEnabled: false,
@@ -74,6 +74,10 @@ class GameplayComponent extends React.Component {
             wildActionsButtonEnabled: false,
 
             payJailChargesButtonEnabled: false,
+
+            giveUpButtonEnabled: false,
+            mortgagePropertyButtonEnabled: false,
+
         };
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
 
@@ -238,7 +242,8 @@ class GameplayComponent extends React.Component {
             window.alert("You don't have sufficient balance!");
 
             // Pass Buying property which will lead to auction
-            this.nextPlayer();
+            // this.nextPlayer();
+            this.setState({ giveUpButtonEnabled: true, mortgagePropertyButtonEnabled: true })
         }
 
         // Keepin it here for now.
@@ -308,7 +313,10 @@ class GameplayComponent extends React.Component {
             buyPropertyButtonEnabled: false,
             passPropertyForAuction: false,
             payPropertyRentButtonEnabled: false,
+
+            buyUtilityCompanyButtonEnabled: false,
             payUtilityBillsButtonEnabled: false,
+
             payTaxButtonEnabled: false,
             collectSalaryButtonEnabled: false,
             pickCommunityCardButtonEnabled: false,
@@ -316,8 +324,17 @@ class GameplayComponent extends React.Component {
             continueButtonEnabled: false,
             
             wildActionsButtonEnabled: false,
+
+            buyRailRoadButtonEnabled: false,
+            payRailRoadTaxButtonEnabled: false,
+
+            payJailChargesButtonEnabled: false,
+
+            giveUpButtonEnabled: false,
+            mortgagePropertyButtonEnabled: false,
         });
     }
+
     processChanceForCorrespondingBLock(selectedBlock, currentPlayer, position) {
         const group = selectedBlock.groupNumber;
 
@@ -347,20 +364,23 @@ class GameplayComponent extends React.Component {
             // Properties which doesn't take rent
             if (selectedBlock.owned_by != null &&
                 selectedBlock.owned_by.id !== currentPlayer.id) {
-                    this.setState({ continueGameplay: true });
+                    this.setState({ payRailRoadTaxButtonEnabled: true });
             } else if (selectedBlock.owned_by == null &&
                 typeof selectedBlock.price === 'number') {
-                    this.setState({ buyRoadButtonEnabled: true, continueGameplay: true });
+                    this.setState({ buyRailRoadButtonEnabled: true, passPropertyForAuction: true, continueButtonEnabled: true });
+            } else if (selectedBlock.owned_by.id === currentPlayer.id) {
+                this.setState({ continueButtonEnabled: true });
             }
         } else if (group === 2) {
             // UTILITIES PROVEIDRS
-            // this.setState({ payUtilityBillsButtonEnabled: true });
             if (selectedBlock.owned_by != null &&
                 selectedBlock.owned_by.id !== currentPlayer.id) {
-                    this.setState({ continueGameplay: true });
+                    this.setState({ payUtilityBillsButtonEnabled: true });
             } else if (selectedBlock.owned_by == null &&
                 typeof selectedBlock.price === 'number') {
-                    this.setState({ buyUtilityCompanyButtonEnabled: true, continueGameplay: true });
+                    this.setState({ buyUtilityCompanyButtonEnabled: true, passPropertyForAuction: true, continueButtonEnabled: true });
+            } else if (selectedBlock.owned_by.id === currentPlayer.id) {
+                this.setState({ continueButtonEnabled: true });
             }
         } else if ([3,4,5,6,7,8,9,10].includes(group)) {
             // Poperty block
@@ -382,27 +402,29 @@ class GameplayComponent extends React.Component {
     }
 
     payUtilityBill = () => {
-        const { currentPlayer, selectedBlock, bank } = this.state;
+        const { dice1, dice2, currentPlayer, selectedBlock, board } = this.state;
 
-        if (currentPlayer.balance >= selectedBlock.price) {
-            currentPlayer.balance -= selectedBlock.price; // Deduct from user
-            bank.balance += selectedBlock.price; // Add money to bank
+        const owner = selectedBlock.owned_by;
+        const propertyCount = board.filter(b => b.owned_by && b.owned_by.id === owner.id).length;
 
-            this.setState({ currentPlayer, selectedBlock, bank });
-            
+        const amount = propertyCount === 1 ?  4 * (dice1 + dice2) : 10 * (dice1 + dice2);
+
+        if (currentPlayer.balance >= amount) {
+            currentPlayer.balance -= amount; // Deduct from user
+            owner.balance += amount; // Add money to bank
+
+            this.setState({ currentPlayer, selectedBlock, board });
             window.alert('Bill paid successfully');
-            
             this.nextPlayer();
             
         } else {
             window.alert("You don't have sufficient balance! Mortgage something or sell a property!");
 
             // Pass Buying property which will lead to auction
-            this.nextPlayer();
-        }
+            // this.nextPlayer();
+            this.setState({ giveUpButtonEnabled: true, mortgagePropertyButtonEnabled: true })
 
-        // Keepin it here for now.
-        // this.resetButtonModes();
+        }
     }
 
     payGovtTax = () => {
@@ -424,7 +446,9 @@ class GameplayComponent extends React.Component {
             window.alert("You don't have sufficient balance! Mortgage something or sell a property!");
 
             // Pass Buying property which will lead to auction
-            this.nextPlayer();
+            // this.nextPlayer();
+            this.setState({ giveUpButtonEnabled: true, mortgagePropertyButtonEnabled: true })
+
         }
     }
 
@@ -485,8 +509,8 @@ class GameplayComponent extends React.Component {
 
         console.log(card,cardIndex,cardType)
         // Execute the picked wild card
-        const { chanceCards, communityCards, chanceCardsMap, communityCardsMap, currentPlayer, players } = this.state;
-        console.log(chanceCardsMap[card])
+        const { chanceCards, communityCards, chanceCardsMap, communityCardsMap, currentPlayer } = this.state;
+
         if (cardType === 'chance') {
             switch (chanceCardsMap[card]) {
                 case 0:
@@ -496,6 +520,9 @@ class GameplayComponent extends React.Component {
                     break;
                 case 1:
                     //  "Make General Repairs on All Your Property. For each house pay $25. For each hotel $100.",
+                    // Pay 25 dollar for every property owned
+                    this.pay25ForEveryProperty();
+                    // TODO
                     break;
                 case 2:
                     // "Speeding fine $15."
@@ -504,9 +531,7 @@ class GameplayComponent extends React.Component {
                     break;
                 case 3:
                     //"You have been elected chairman of the board. Pay each player $50."
-                    players.filter(p => p.id !== currentPlayer.id).forEach(targetPlayer => {
-                        this.sendMoneyFromAtoB(currentPlayer, targetPlayer, 50);
-                    });
+                    this.payEachPlayer50();
                     break;
                 case 4:
                     // "Go back three spaces.",
@@ -514,7 +539,7 @@ class GameplayComponent extends React.Component {
                     break;
                 case 5:
                     // "ADVANCE TO THE NEAREST UTILITY. IF UNOWNED, you may buy it from the Bank. IF OWNED, throw dice and pay owner a total ten times the amount thrown.",
-                    // TO do
+                    this.jumpToNearestUtility(currentPlayer);
                     break;
                 case 6:
                     // "Bank pays you dividend of $50."
@@ -522,6 +547,7 @@ class GameplayComponent extends React.Component {
                     break;
                 case 7:
                     //   "ADVANCE TO THE NEAREST RAILROAD. If UNOWNED, you may buy it from the Bank. If OWNED, pay owner twice the rental to which they are otherwise entitled.",
+                    this.jumpToNearestRailRoad(currentPlayer);
                     break;
                 case 8:
                     // "Pay poor tax of $15.",
@@ -530,6 +556,7 @@ class GameplayComponent extends React.Component {
                 case 9:
                     //   "Take a trip to Reading Rail Road. If you pass 'GO' collect $200.",
                     // To do
+                    this.takeTripToReadingRailRoad();
                     break;
                 case 10:
                     //   "ADVANCE to Boardwalk.",
@@ -651,6 +678,8 @@ class GameplayComponent extends React.Component {
 
             // Pass Buying property which will lead to auction
             // this.nextPlayer();
+            this.setState({ giveUpButtonEnabled: true, mortgagePropertyButtonEnabled: true })
+
         }
     }
 
@@ -660,14 +689,38 @@ class GameplayComponent extends React.Component {
 
     sendMoneyFromAtoB(personA, personB, amount) {
 
+        if (personA.balance >= amount) {
+            personA.balance -= amount; // Deduct from user
+            personB.balance += amount; // Add money to bank
+            
+            window.alert('Rent paid successfully');
+            
+            // this.nextPlayer();
+            
+        } else {
+            window.alert("You don't have sufficient balance! Mortgage something or sell a property!");
+
+            // Pass Buying property which will lead to auction
+            // this.nextPlayer();
+            this.setState({ giveUpButtonEnabled: true, mortgagePropertyButtonEnabled: true })
+
+        }
     }
 
     jumpPlayerToPosition(player, position) {
-
+        player.position = position;
     }
 
     jumpPlayerBySteps(player, steps) {
-
+        let index = player.position;
+        index += steps;
+        
+        if (index > 39) {
+            index = index - 40; 
+        } else if (index < 0) {
+            index = 40 + index;
+        }
+        player.position = index;
     }
 
     movePlayerToJail() {
@@ -700,7 +753,143 @@ class GameplayComponent extends React.Component {
 
             // Pass Buying property which will lead to auction
             // this.nextPlayer();
+            this.setState({ giveUpButtonEnabled: true, mortgagePropertyButtonEnabled: true })
+
         }
+    }
+
+    payRailRoadTax = () => {
+        const { currentPlayer, board, selectedBlock } = this.state;
+        const owner = selectedBlock.owned_by;
+        const propertiesCount = board.filter(g =>  g.owned_by && g.owned_by.id === owner.id).length;
+
+        const amount = 25 * propertiesCount;
+
+        if (currentPlayer.balance >= amount) {
+            currentPlayer.balance -= amount; // Deduct from user
+            owner.balance += amount; // Add money to bank
+            
+            window.alert('Rent paid successfully');
+            
+            this.setState({ currentPlayer, board, selectedBlock });
+            this.nextPlayer();
+            
+        } else {
+            window.alert("You don't have sufficient balance! Mortgage something or sell a property!");
+
+            // Pass Buying property which will lead to auction
+            // this.nextPlayer();
+            this.setState({ giveUpButtonEnabled: true, mortgagePropertyButtonEnabled: true })
+
+        }
+    }
+
+    payEachPlayer50() {
+
+        const { currentPlayer, players, playersCount } = this.state;
+        const totalAmount = 50 * (playersCount - 1);
+
+        if (currentPlayer.balance >= totalAmount) {
+            currentPlayer.balance -= totalAmount; // Deduct from user
+
+            const targetPlayers = players.filter(p => p.id !== currentPlayer.id);
+            for (let i=0; i< playersCount - 1; i += 1) {
+                targetPlayers[i].balance += 50;
+            }
+
+            window.alert('Paid successfully');
+            this.setState({ currentPlayer, players });
+            this.nextPlayer();
+            
+        } else {
+            window.alert("You don't have sufficient balance! Mortgage something or sell a property!");
+
+            // Pass Buying property which will lead to auction
+            this.setState({ giveUpButtonEnabled: true, mortgagePropertyButtonEnabled: true })
+
+        }
+    }
+
+    pay25ForEveryProperty() {
+        const { currentPlayer, players, bank, board } = this.state;
+
+        const propertiesOwned = board.map(b => [3,4,5,6,7,8,9,10].includes(b.groupNumber) && b.owned_by && b.owned_by.id === currentPlayer.id).length; 
+        const totalAmount = 25 * propertiesOwned;
+
+        if (currentPlayer.balance >= totalAmount) {
+            currentPlayer.balance -= totalAmount; // Deduct from user
+
+            bank.balance += totalAmount;
+
+            window.alert('Paid successfully');
+            this.setState({ currentPlayer, players, bank });
+            this.nextPlayer();
+            
+        } else {
+            window.alert("You don't have sufficient balance! Mortgage something or sell a property!");
+
+            // Pass Buying property which will lead to auction
+            this.setState({ giveUpButtonEnabled: true, mortgagePropertyButtonEnabled: true })
+
+        }
+    }
+
+    jumpToNearestUtility(player) {
+        const position = player.position;
+        const { selectedBlock } = this.state;
+        if (position < 12) player.position = 12;
+        else if (position >= 12 && position < 28) player.position = 28;
+        else if (position >= 28) player.position = 12;
+
+        if (selectedBlock.owned_by != null &&
+            selectedBlock.owned_by.id !== player.id) {
+                this.setState({ payUtilityBillsButtonEnabled: true });
+        } else if (selectedBlock.owned_by == null &&
+            typeof selectedBlock.price === 'number') {
+                this.setState({ buyUtilityCompanyButtonEnabled: true, passPropertyForAuction: true, continueButtonEnabled: true });
+        } else if (selectedBlock.owned_by.id === player.id) {
+            this.setState({ continueButtonEnabled: true });
+        }
+    }
+
+    jumpToNearestRailRoad(player) {
+        const position = player.position;
+        const { selectedBlock } = this.state;
+        if (position < 5) player.position = 5;
+        else if (position >= 5 && position < 15) player.position = 15;
+        else if (position >= 15 && position < 25) player.position = 25;
+        else if (position >= 25 && position < 35) player.position = 35;
+        else if (position >= 35) player.position = 5;
+
+        if (selectedBlock.owned_by != null &&
+            selectedBlock.owned_by.id !== player.id) {
+                this.setState({ payRailRoadTaxButtonEnabled: true });
+        } else if (selectedBlock.owned_by == null &&
+            typeof selectedBlock.price === 'number') {
+                this.setState({ buyRailRoadButtonEnabled: true, passPropertyForAuction: true, continueButtonEnabled: true });
+        } else if (selectedBlock.owned_by.id === player.id) {
+            this.setState({ continueButtonEnabled: true });
+        }
+    }
+
+    mortgageProperty() {
+        // const { selectedBlock, currentPlayer, bank } = this.state;
+        // currentPlayer.players = this.state;
+    }
+
+    goBankrupt() {
+        // const targetPlayer = this.state.currentPlayer;
+        const targetPlayerIndex = this.state.currentPlayerIndex;
+        
+        this.nextPlayer();
+        let { currentPlayer, currentPlayerIndex, selectedBlock, players, playersCount } = this.state;
+
+        players.splice(targetPlayerIndex, 1);
+        currentPlayerIndex = players.map(p => p.id).indexOf(currentPlayer.id);
+        playersCount -= 1;
+
+        this.setState({ currentPlayer, currentPlayerIndex, selectedBlock, players, playersCount })
+        
     }
     
     
@@ -933,13 +1122,13 @@ class GameplayComponent extends React.Component {
 
 
                     {
-                        this.state.buyRoadButtonEnabled &&
+                        this.state.buyRailRoadButtonEnabled &&
                         <button onClick={this.buyProperty} >BUY SERVICE COMPANY</button>
                     }
 
                     {
-                        this.state.payRoadTaxButtonEnabled &&
-                        <button onClick={this.payRoadTax} >PAY ROAD TAX</button>
+                        this.state.payRailRoadTaxButtonEnabled &&
+                        <button onClick={this.payRailRoadTax} >PAY RAIL ROAD TAX</button>
                     }
 
                     {
@@ -977,6 +1166,16 @@ class GameplayComponent extends React.Component {
                     {
                         this.state.payJailChargesButtonEnabled &&
                         <button onClick={this.payJailCharges}>PAY JAIL CHARGES</button>
+                    }
+
+                    {
+                        this.state.mortgagePropertyButtonEnabled &&
+                        <button onClick={this.mortgageProperty}>Mortgage Property</button>
+                    }
+
+                    {
+                        this.state.giveUpButtonEnabled &&
+                        <button onClick={this.goBankrupt}>Give Up</button>
                     }
 
                     {
