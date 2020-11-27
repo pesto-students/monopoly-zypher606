@@ -1197,7 +1197,7 @@ class GameplayComponent extends React.Component {
                     </div>
                 </div>
                 <button onClick={this.rollDice} disabled={!this.state.rollDiceButtonEnabled || this.state.currentPlayer.inJail === true}>Roll Dice</button>
-                <button onClick={this.nextAction}>NEXT</button>
+                {/* <button onClick={this.nextAction}>NEXT</button> */}
 
                 <hr/>
                 <h4>Players</h4>
